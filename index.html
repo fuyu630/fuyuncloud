@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>云存储网页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .file-list {
+            margin: 30px auto;
+            max-width: 500px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .file-list li {
+            list-style-type: none;
+            margin-bottom: 10px;
+        }
+
+        .upload-form {
+            margin: 30px auto;
+            max-width: 500px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.788.0.min.js"></script>
+    <script>
+        AWS.config.update({
+            accessKeyId: 'YOUR_ACCESS_KEY_ID',
+            secretAccessKey: 'YOUR_SECRET_ACCESS_KEY',
+            region: 'YOUR_REGION_NAME'
+        });
+
+        var s3 = new AWS.S3();
+
+        function listFiles() {
+            var bucketName = document.getElementById("bucket-name").value;
+
+            var params = {
+                Bucket: bucketName
+            };
+
+            s3.listObjects(params, function(err, data) {
+                if (err) {
+                    console.log("获取文件列表错误：" + err);
+                } else {
+                    var fileList = document.getElementById("file-list");
+                    fileList.innerHTML = '';
+
+                    data.Contents.forEach(function(file) {
+                        var li = document.createElement("li");
+                        var link = document.createElement("a");
+                        link.href = "https://" + bucketName + ".s3.amazonaws.com/" + file.Key;
+                        link.target = "_blank";
+                        link.innerText = file.Key;
+                        li.appendChild(link);
+                        fileList.appendChild(li);
+                    });
+                }
+            });
+        }
+
+        function uploadFile() {
+            var bucketName = document.getElementById("bucket-name").value;
+            var file = document.getElementById("upload-file").files[0];
+            var objectName = file.name;
+
+            var params = {
+                Bucket: bucketName,
+                Key: objectName,
+                Body: file,
+                ContentType: file.type
+            };
+
+            s3.upload(params, function(err, data) {
+                if (err) {
+                    console.log("上传错误：" + err);
+                } else {
+                    console.log("上传成功");
+                    listFiles();
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>云存储网页</h1>
+
+    <div class="file-list">
+        <h2>文件列表</h2>
+        <ul id="file-list"></ul>
+    </div>
+
+    <div class="upload-form">
+        <h2>上传文件</h2>
+        <label for="bucket-name">Bucket名称：</label>
+        <input type="text" id="bucket-name"><br><br>
+
+        <label for="upload-file">选择文件：</label>
+        <input type="file" id="upload-file"><br><br>
+
+        <button onclick="uploadFile()">上传</button>
+    </div>
+
+    <script>
+        listFiles();
+    </script>
+</body>
+</html>
